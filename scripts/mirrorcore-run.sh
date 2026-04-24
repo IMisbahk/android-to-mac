@@ -54,8 +54,15 @@ echo "Using device: $SERIAL"
 echo "[2/5] Installing Android Agent..."
 (
   cd "$ROOT_DIR/mirrorcore-android-agent"
-  ANDROID_HOME="$ANDROID_HOME" ./gradlew :app:installDebug --no-daemon
+  ANDROID_HOME="$ANDROID_HOME" ./gradlew :app:assembleDebug --no-daemon
 )
+
+APK="$ROOT_DIR/mirrorcore-android-agent/app/build/outputs/apk/debug/app-debug.apk"
+if [ ! -f "$APK" ]; then
+  echo "ERROR: APK not found at $APK" >&2
+  exit 1
+fi
+adb -s "$SERIAL" install -r "$APK" >/dev/null
 
 echo "[3/5] Launching Agent (autostart)..."
 adb -s "$SERIAL" shell am start -n dev.mirrorcore.agent/.MainActivity --ez autostart true >/dev/null || true
