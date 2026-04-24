@@ -90,3 +90,68 @@ pub fn capture_h264(cfg: VideoCaptureConfig) -> Result<()> {
     eprintln!("wrote {} bytes to {}", bytes, cfg.out_path);
     Ok(())
 }
+
+pub struct VideoMirrorConfig {
+    pub host: String,
+    pub port: u16,
+}
+
+pub fn mirror_h264_to_stdout(cfg: VideoMirrorConfig) -> Result<()> {
+    let stream =
+        TcpStream::connect((&*cfg.host, cfg.port)).with_context(|| format!("connect video {}:{}", cfg.host, cfg.port))?;
+    stream.set_nodelay(true).ok();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(10)))
+        .ok();
+
+    let mcb1 = Mcb1Stream::default();
+    let mut reader = BufReader::new(stream);
+
+    let stdout = std::io::stdout();
+    let mut out = BufWriter::new(stdout.lock());
+
+    let mut got_config = false;
+    loop {
+        let frame = mcb1.read_frame(&mut reader)?;
+        match frame.header.msg_type {
+            x if x == MsgType::VideoConfig as u8 => {
+                let vc = VideoConfig::from_payload(&frame.payload)?;
+                eprintln!(
+                    "VIDEO_CONFIG codec={:?} {}x{} fps*1000={} sps={}B pps={}B",
+                    vc.codec,
+                    vc.width,
+                    vc.height,
+                    vc.fps_times_1000,
+                    vc.sps.len(),
+                    vc.pps.len()
+                );
+                // Prepend SPS/PPS as AnnexB NALs so raw decoders can lock immediately.
+                write_annexb_nal(&mut out, &vc.sps)?;
+                write_annexb_nal(&mut out, &vc.pps)?;
+                out.flush()?;
+                got_config = true;
+            }
+            x if x == MsgType::VideoFrame as u8 => {
+                if !got_config {
+                    eprintln!("warning: got VIDEO_FRAME before VIDEO_CONFIG");
+                    got_config = true;
+                }
+                let vf = VideoFrame::from_payload(&frame.payload)?;
+                out.write_all(&vf.data)?;
+                out.flush()?;
+            }
+            other => {
+                eprintln!("ignoring msg_type={other}");
+            }
+        }
+    }
+}
+
+fn write_annexb_nal<W: Write>(out: &mut W, nal_no_startcode: &[u8]) -> Result<()> {
+    if nal_no_startcode.is_empty() {
+        return Ok(());
+    }
+    out.write_all(&[0, 0, 0, 1])?;
+    out.write_all(nal_no_startcode)?;
+    Ok(())
+}
