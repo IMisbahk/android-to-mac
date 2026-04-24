@@ -58,6 +58,10 @@ class MainActivity : AppCompatActivity() {
             }
             startService(intent)
         }
+
+        if (intent.getBooleanExtra(EXTRA_AUTOSTART, false)) {
+            captureLauncher.launch(mediaProjectionManager.createScreenCaptureIntent())
+        }
     }
 
     private fun setupSpinners() {
@@ -90,5 +94,8 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT < 33) return
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1001)
     }
-}
 
+    companion object {
+        const val EXTRA_AUTOSTART = "autostart"
+    }
+}
