@@ -33,7 +33,7 @@ fi
 cd "$ROOT_DIR"
 
 echo "[1/5] Checking adb device..."
-DEV_COUNT="$(adb devices | awk 'NR>1 && $2==\"device\" {c++} END {print c+0}')"
+DEV_COUNT="$(adb devices | awk 'NR>1 && $2=="device" {c++} END {print c+0}')"
 if [ "$DEV_COUNT" -eq 0 ]; then
   echo "No adb devices. Connect phone and enable USB debugging." >&2
   exit 1
@@ -71,4 +71,3 @@ exec bash -lc \
   "cd \"$ROOT_DIR\" && \
    cargo run -q -p mirrorcore-connection-suite -- mirror --serial \"$SERIAL\" | \
    ffplay -loglevel warning -fflags nobuffer -flags low_delay -framedrop -probesize 32 -analyzeduration 0 -i -"
-
