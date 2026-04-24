@@ -8,3 +8,5 @@ mirrorcore-protocol = { path = "../mirrorcore-protocol" }
 
 anyhow = "1.0.102"
 clap = { version = "4.6.1", features = ["derive"] }
+cpal = "0.15.3"
+ringbuf = "0.4.8"
