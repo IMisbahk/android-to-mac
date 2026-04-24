@@ -34,6 +34,13 @@ PING/PONG:
 cargo run -p mirrorcore-connection-suite -- ping --serial <SERIAL> --echo-us 4242
 ```
 
+Input (requires enabling MirrorCore Agent Accessibility service on the phone):
+
+```sh
+cargo run -p mirrorcore-connection-suite -- tap --serial <SERIAL> --x 0.5 --y 0.5
+cargo run -p mirrorcore-connection-suite -- swipe --serial <SERIAL> --x0 0.2 --y0 0.5 --x1 0.8 --y1 0.5
+```
+
 Capture raw H.264 AnnexB stream to `capture.h264`:
 
 ```sh
