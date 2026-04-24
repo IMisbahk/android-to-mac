@@ -1,4 +1,5 @@
 mod adb;
+mod audio;
 mod control;
 mod mcb1;
 mod video;
@@ -11,6 +12,7 @@ use clap::{Parser, Subcommand};
 const DEFAULT_HOST: &str = "127.0.0.1";
 const CONTROL_PORT: u16 = 27183;
 const VIDEO_PORT: u16 = 27184;
+const AUDIO_PORT: u16 = 27185;
 
 #[derive(Parser, Debug)]
 #[command(name = "mirrorcore-connection-suite")]
@@ -100,6 +102,22 @@ enum Command {
         host: String,
 
         #[arg(long, default_value_t = VIDEO_PORT)]
+        port: u16,
+
+        /// If set, do not run adb forward automatically.
+        #[arg(long, default_value_t = false)]
+        no_adb: bool,
+    },
+
+    /// Play device audio (requires Android 10+ and app audio not opting out).
+    Audio {
+        #[arg(long)]
+        serial: Option<String>,
+
+        #[arg(long, default_value = DEFAULT_HOST)]
+        host: String,
+
+        #[arg(long, default_value_t = AUDIO_PORT)]
         port: u16,
 
         /// If set, do not run adb forward automatically.
@@ -240,6 +258,18 @@ fn main() -> Result<()> {
             }
 
             video::mirror_h264_to_stdout(video::VideoMirrorConfig { host, port })?;
+        }
+        Command::Audio {
+            serial,
+            host,
+            port,
+            no_adb,
+        } => {
+            let serial = resolve_serial(serial)?;
+            if !no_adb {
+                adb::forward(&serial, AUDIO_PORT, AUDIO_PORT).ok();
+            }
+            audio::play_audio(audio::AudioPlayConfig { host, port })?;
         }
         Command::Tap { serial, host, port, x, y } => {
             let serial = resolve_serial(serial)?;
