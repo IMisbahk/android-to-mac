@@ -16,10 +16,22 @@ Set up forwards (control `27183`, video `27184`):
 cargo run -p mirrorcore-connection-suite -- forward --serial <SERIAL>
 ```
 
+Remove forwards:
+
+```sh
+cargo run -p mirrorcore-connection-suite -- unforward --serial <SERIAL>
+```
+
 HELLO handshake:
 
 ```sh
 cargo run -p mirrorcore-connection-suite -- hello --serial <SERIAL>
+```
+
+PING/PONG:
+
+```sh
+cargo run -p mirrorcore-connection-suite -- ping --serial <SERIAL> --echo-us 4242
 ```
 
 Capture raw H.264 AnnexB stream to `capture.h264`:
@@ -33,4 +45,3 @@ Play (requires ffmpeg tools):
 ```sh
 ffplay -fflags nobuffer -flags low_delay -framedrop capture.h264
 ```
-
