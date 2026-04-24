@@ -31,6 +31,12 @@ enum Command {
         serial: Option<String>,
     },
 
+    /// Remove adb port forwards for control/video.
+    Unforward {
+        #[arg(long)]
+        serial: Option<String>,
+    },
+
     /// Perform MCB1 HELLO handshake over control channel.
     Hello {
         #[arg(long)]
@@ -41,6 +47,21 @@ enum Command {
 
         #[arg(long, default_value_t = CONTROL_PORT)]
         port: u16,
+    },
+
+    /// Send PING over control channel and expect PONG.
+    Ping {
+        #[arg(long)]
+        serial: Option<String>,
+
+        #[arg(long, default_value = DEFAULT_HOST)]
+        host: String,
+
+        #[arg(long, default_value_t = CONTROL_PORT)]
+        port: u16,
+
+        #[arg(long, default_value_t = 123)]
+        echo_us: u64,
     },
 
     /// Capture H.264 stream from the video channel into a .h264 file.
@@ -90,6 +111,12 @@ fn main() -> Result<()> {
             adb::forward(&serial, VIDEO_PORT, VIDEO_PORT)?;
             println!("forwarded control tcp:{CONTROL_PORT} and video tcp:{VIDEO_PORT} for {serial}");
         }
+        Command::Unforward { serial } => {
+            let serial = resolve_serial(serial)?;
+            adb::remove_forward(&serial, CONTROL_PORT).ok();
+            adb::remove_forward(&serial, VIDEO_PORT).ok();
+            println!("removed forwards for {serial}");
+        }
         Command::Hello { serial, host, port } => {
             let serial = resolve_serial(serial)?;
             adb::forward(&serial, CONTROL_PORT, CONTROL_PORT).ok();
@@ -100,6 +127,18 @@ fn main() -> Result<()> {
                 "HELLO from device: role={:?} caps=0x{:08x} device_name={} nonce={}",
                 resp.role, resp.caps, resp.device_name, resp.session_nonce
             );
+        }
+        Command::Ping {
+            serial,
+            host,
+            port,
+            echo_us,
+        } => {
+            let serial = resolve_serial(serial)?;
+            adb::forward(&serial, CONTROL_PORT, CONTROL_PORT).ok();
+            let mut c = control::ControlClient::connect(&host, port)?;
+            let pong = c.ping(echo_us)?;
+            println!("PONG echo_timestamp_us={}", pong.echo_timestamp_us);
         }
         Command::Capture {
             serial,
