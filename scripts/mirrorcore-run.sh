@@ -18,6 +18,7 @@ need() {
 
 need adb
 need cargo
+need rg
 
 if ! command -v ffplay >/dev/null 2>&1; then
   echo "missing dependency: ffplay (ffmpeg). Install via Homebrew: brew install ffmpeg" >&2
@@ -66,16 +67,24 @@ adb -s "$SERIAL" forward "tcp:${VIDEO_PORT}" "tcp:${VIDEO_PORT}" || true
 
 echo "[4.5/5] Waiting for agent ports to come up..."
 DEADLINE=$((SECONDS + 45))
+READY="0"
 while [ "$SECONDS" -lt "$DEADLINE" ]; do
   if adb -s "$SERIAL" shell ss -ltn 2>/dev/null | rg -q ":${CONTROL_PORT}"; then
     if adb -s "$SERIAL" shell ss -ltn 2>/dev/null | rg -q ":${VIDEO_PORT}"; then
       echo "Agent ports are listening."
+      READY="1"
       break
     fi
   fi
   echo "Waiting... (accept the prompt on the phone)"
   sleep 1
 done
+if [ "$READY" != "1" ]; then
+  echo "ERROR: Agent ports did not come up within 45s." >&2
+  echo "Make sure you tapped Allow on the screen-capture prompt and the MirrorCore notification is visible." >&2
+  echo "Debug: adb -s $SERIAL logcat -d | rg -n \"MirrorCore\" | tail -n 200" >&2
+  exit 1
+fi
 
 echo "[5/5] Starting mirror window (ffplay)..."
 echo "Close ffplay to stop."
