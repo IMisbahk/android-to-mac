@@ -110,4 +110,4 @@ trap 'pkill -P $$ || true' EXIT
 exec bash -lc \
   "cd \"$ROOT_DIR\" && \
    cargo run -q -p mirrorcore-connection-suite -- mirror --serial \"$SERIAL\" | \
-   ffplay -loglevel warning -fflags nobuffer -flags low_delay -framedrop -probesize 32 -analyzeduration 0 -i -"
+   ffplay -loglevel warning -f h264 -fflags nobuffer -flags low_delay -framedrop -probesize 32 -analyzeduration 0 -i -"
