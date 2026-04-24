@@ -5,3 +5,6 @@
 target/
 **/*.rs.bk
 
+mirrorcore-android-agent/.gradle/
+mirrorcore-android-agent/**/build/
+mirrorcore-android-agent/local.properties
