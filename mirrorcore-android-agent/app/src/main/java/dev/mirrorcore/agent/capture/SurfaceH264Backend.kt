@@ -100,18 +100,24 @@ class SurfaceH264Backend : CaptureBackend {
                         val fmt = codec.outputFormat
                         val sps = fmt.getByteBuffer("csd-0")?.let { H264Util.stripStartCode(H264Util.toByteArray(it)) } ?: ByteArray(0)
                         val pps = fmt.getByteBuffer("csd-1")?.let { H264Util.stripStartCode(H264Util.toByteArray(it)) } ?: ByteArray(0)
-                        sender.sendVideoConfig(
-                            Mcb1Payloads.VideoConfig(
-                                codec = 1,
-                                width = w,
-                                height = h,
-                                fpsTimes1000 = fps.toLong() * 1000L,
-                                sps = sps,
-                                pps = pps,
-                            ),
-                            timestampUs = System.nanoTime() / 1000,
-                        )
-                        sentConfig = true
+                        try {
+                            sender.sendVideoConfig(
+                                Mcb1Payloads.VideoConfig(
+                                    codec = 1,
+                                    width = w,
+                                    height = h,
+                                    fpsTimes1000 = fps.toLong() * 1000L,
+                                    sps = sps,
+                                    pps = pps,
+                                ),
+                                timestampUs = System.nanoTime() / 1000,
+                            )
+                            sentConfig = true
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "send config failed: ${t.message}")
+                            running.set(false)
+                            break
+                        }
                     }
                     outIndex >= 0 -> {
                         val buf: ByteBuffer = codec.getOutputBuffer(outIndex) ?: run {
@@ -126,16 +132,22 @@ class SurfaceH264Backend : CaptureBackend {
                             val annexb = if (H264Util.isAnnexB(chunk)) chunk else H264Util.avccToAnnexB(chunk)
                             val keyframe = (info.flags and MediaCodec.BUFFER_FLAG_KEY_FRAME) != 0
                             if (sentConfig) {
-                                sender.sendVideoFrame(
-                                    Mcb1Payloads.VideoFrame(
-                                        ptsUs = info.presentationTimeUs,
-                                        data = annexb,
-                                    ),
-                                    timestampUs = System.nanoTime() / 1000,
-                                    keyframe = keyframe,
-                                )
-                                frames += 1
-                                bytes += annexb.size.toLong()
+                                try {
+                                    sender.sendVideoFrame(
+                                        Mcb1Payloads.VideoFrame(
+                                            ptsUs = info.presentationTimeUs,
+                                            data = annexb,
+                                        ),
+                                        timestampUs = System.nanoTime() / 1000,
+                                        keyframe = keyframe,
+                                    )
+                                    frames += 1
+                                    bytes += annexb.size.toLong()
+                                } catch (t: Throwable) {
+                                    Log.w(TAG, "send frame failed: ${t.message}")
+                                    running.set(false)
+                                    break
+                                }
                             }
                         }
                         codec.releaseOutputBuffer(outIndex, false)
