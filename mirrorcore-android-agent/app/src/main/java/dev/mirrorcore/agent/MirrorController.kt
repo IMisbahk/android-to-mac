@@ -6,6 +6,7 @@ import android.util.Log
 import dev.mirrorcore.agent.capture.CaptureBackend
 import dev.mirrorcore.agent.capture.ImageReaderH264Backend
 import dev.mirrorcore.agent.capture.SurfaceH264Backend
+import dev.mirrorcore.agent.audio.AudioCapture
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicReference
 
@@ -19,16 +20,29 @@ class MirrorController(
     private val videoServer = VideoServer { sock -> onVideoClient(sock) }
     private val activeBackend = AtomicReference<CaptureBackend?>(null)
 
+    private val activeAudioSocket = AtomicReference<Socket?>(null)
+    private val audioServer = AudioServer { sock -> onAudioClient(sock) }
+    private val audioCapture = AudioCapture()
+
     fun start() {
         controlServer.start()
         videoServer.start()
+        audioServer.start()
     }
 
     fun stop() {
         activeBackend.getAndSet(null)?.stop()
+        audioCapture.stop()
         videoServer.stop()
         controlServer.stop()
+        audioServer.stop()
         activeVideoSocket.getAndSet(null)?.let {
+            try {
+                it.close()
+            } catch (_: Throwable) {
+            }
+        }
+        activeAudioSocket.getAndSet(null)?.let {
             try {
                 it.close()
             } catch (_: Throwable) {
@@ -64,6 +78,29 @@ class MirrorController(
             activeBackend.set(backend)
         } catch (t: Throwable) {
             Log.e(TAG, "Video client setup failed", t)
+            try {
+                sock.close()
+            } catch (_: Throwable) {
+            }
+        }
+    }
+
+    private fun onAudioClient(sock: Socket) {
+        sock.tcpNoDelay = true
+        Log.i(TAG, "Audio client connected from ${sock.inetAddress}")
+        activeAudioSocket.getAndSet(sock)?.let {
+            try {
+                it.close()
+            } catch (_: Throwable) {
+            }
+        }
+
+        try {
+            val sender = AudioSender(sock.getOutputStream())
+            audioCapture.stop()
+            audioCapture.start(projection, sender)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Audio client setup failed", t)
             try {
                 sock.close()
             } catch (_: Throwable) {
