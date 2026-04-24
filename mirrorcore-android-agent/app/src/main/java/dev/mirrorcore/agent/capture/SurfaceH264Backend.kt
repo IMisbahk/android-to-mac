@@ -120,7 +120,8 @@ class SurfaceH264Backend : CaptureBackend {
                         }
                     }
                     outIndex >= 0 -> {
-                        val buf: ByteBuffer = codec.getOutputBuffer(outIndex) ?: run {
+                        val buf: ByteBuffer? = codec.getOutputBuffer(outIndex)
+                        if (buf == null) {
                             codec.releaseOutputBuffer(outIndex, false)
                             continue
                         }
