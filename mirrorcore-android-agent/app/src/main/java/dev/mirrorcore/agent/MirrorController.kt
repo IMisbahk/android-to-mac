@@ -49,16 +49,26 @@ class MirrorController(
         // Replace any previous backend and restart capture on the new connection.
         activeBackend.getAndSet(null)?.stop()
 
-        val sender = VideoSender(sock.getOutputStream())
+        try {
+            val sender = VideoSender(sock.getOutputStream())
 
-        val backend: CaptureBackend = try {
-            SurfaceH264Backend().also { it.start(projection, config, sender) }
+            val backend: CaptureBackend = try {
+                Log.i(TAG, "Starting SurfaceH264 backend...")
+                SurfaceH264Backend().also { it.start(projection, config, sender) }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Surface backend failed, falling back to ImageReader", t)
+                Log.i(TAG, "Starting ImageReaderH264 backend...")
+                ImageReaderH264Backend().also { it.start(projection, config, sender) }
+            }
+
+            activeBackend.set(backend)
         } catch (t: Throwable) {
-            Log.w(TAG, "Surface backend failed, falling back to ImageReader: ${t.message}")
-            ImageReaderH264Backend().also { it.start(projection, config, sender) }
+            Log.e(TAG, "Video client setup failed", t)
+            try {
+                sock.close()
+            } catch (_: Throwable) {
+            }
         }
-
-        activeBackend.set(backend)
     }
 
     companion object {

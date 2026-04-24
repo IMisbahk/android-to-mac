@@ -28,7 +28,7 @@ class VideoServer(private val onClient: (Socket) -> Unit) {
                 try {
                     onClient(sock)
                 } catch (t: Throwable) {
-                    Log.w(TAG, "Video client handler error: ${t.message}")
+                    Log.w(TAG, "Video client handler error", t)
                     try {
                         sock.close()
                     } catch (_: Throwable) {
@@ -51,4 +51,3 @@ class VideoServer(private val onClient: (Socket) -> Unit) {
         private const val TAG = "MirrorCoreVideo"
     }
 }
-
