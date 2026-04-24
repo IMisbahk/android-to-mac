@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 use mirrorcore_protocol::enums::{caps, MsgType, Role};
-use mirrorcore_protocol::types::{Hello, Ping};
+use mirrorcore_protocol::types::{Hello, InputEvent, Ping, TouchAction, TouchEvent};
 use mirrorcore_protocol::Header;
 
 use crate::mcb1::Mcb1Stream;
@@ -82,6 +82,67 @@ impl ControlClient {
             anyhow::bail!("expected PONG response, got msg_type={}", resp.header.msg_type);
         }
         Ok(Ping::from_payload(&resp.payload)?)
+    }
+
+    pub fn tap(&mut self, x_norm: f32, y_norm: f32) -> Result<()> {
+        self.send_touch_sequence(x_norm, y_norm, x_norm, y_norm)
+    }
+
+    pub fn swipe(&mut self, x0: f32, y0: f32, x1: f32, y1: f32) -> Result<()> {
+        self.send_touch_sequence(x0, y0, x1, y1)
+    }
+
+    fn send_touch_sequence(&mut self, x0: f32, y0: f32, x1: f32, y1: f32) -> Result<()> {
+        let mut writer = BufWriter::new(self.stream.try_clone()?);
+
+        let down = InputEvent::Touch(TouchEvent {
+            action: TouchAction::Down,
+            pointer_id: 0,
+            x_norm: x0,
+            y_norm: y0,
+            pressure: 1.0,
+            buttons: 0,
+            reserved: 0,
+        });
+        self.send_input(&mut writer, down)?;
+
+        let mv = InputEvent::Touch(TouchEvent {
+            action: TouchAction::Move,
+            pointer_id: 0,
+            x_norm: x1,
+            y_norm: y1,
+            pressure: 1.0,
+            buttons: 0,
+            reserved: 0,
+        });
+        self.send_input(&mut writer, mv)?;
+
+        let up = InputEvent::Touch(TouchEvent {
+            action: TouchAction::Up,
+            pointer_id: 0,
+            x_norm: x1,
+            y_norm: y1,
+            pressure: 0.0,
+            buttons: 0,
+            reserved: 0,
+        });
+        self.send_input(&mut writer, up)?;
+
+        writer.flush()?;
+        Ok(())
+    }
+
+    fn send_input(&mut self, writer: &mut BufWriter<TcpStream>, ev: InputEvent) -> Result<()> {
+        let payload = ev.to_payload();
+        let header = Header::new(
+            MsgType::InputEvent as u8,
+            0,
+            self.next_seq(),
+            now_us(),
+            payload.len() as u32,
+        );
+        self.mcb1.write_frame(writer, header, payload)?;
+        Ok(())
     }
 
     fn next_seq(&mut self) -> u32 {
