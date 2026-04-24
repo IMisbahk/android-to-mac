@@ -22,3 +22,14 @@ Decode with payload preview:
 ```sh
 cargo run -p mirrorcore-protocol-cli -- decode --payload-hex-bytes 32 < frames.bin
 ```
+
+## Connection suite (host)
+
+The host-side connection suite automates ADB forwarding, control handshake, and raw H.264 capture:
+
+```sh
+cargo run -p mirrorcore-connection-suite -- devices
+cargo run -p mirrorcore-connection-suite -- forward --serial <SERIAL>
+cargo run -p mirrorcore-connection-suite -- hello --serial <SERIAL>
+cargo run -p mirrorcore-connection-suite -- capture --serial <SERIAL> --seconds 10 --out capture.h264
+```
