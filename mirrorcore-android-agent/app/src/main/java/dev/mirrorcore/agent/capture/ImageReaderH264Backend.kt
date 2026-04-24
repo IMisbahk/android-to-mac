@@ -27,6 +27,7 @@ class ImageReaderH264Backend : CaptureBackend {
 
     override fun start(projection: MediaProjection, config: MirrorConfig, sender: VideoSender) {
         if (!running.compareAndSet(false, true)) return
+        Log.i(TAG, "start: projection=${projection.hashCode()}")
 
         val dm = android.content.res.Resources.getSystem().displayMetrics
         val baseW = dm.widthPixels
