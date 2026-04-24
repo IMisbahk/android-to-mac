@@ -100,6 +100,13 @@ fi
 echo "[5/5] Starting mirror window (ffplay)..."
 echo "Close ffplay to stop."
 
+trap 'pkill -P $$ || true' EXIT
+
+(
+  cd "$ROOT_DIR"
+  cargo run -q -p mirrorcore-connection-suite -- audio --serial "$SERIAL" >/dev/null
+) &
+
 exec bash -lc \
   "cd \"$ROOT_DIR\" && \
    cargo run -q -p mirrorcore-connection-suite -- mirror --serial \"$SERIAL\" | \
