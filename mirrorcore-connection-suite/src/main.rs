@@ -90,6 +90,22 @@ enum Command {
         #[arg(long, default_value_t = false)]
         no_adb: bool,
     },
+
+    /// Mirror to stdout as raw AnnexB H.264 (pipe to ffplay).
+    Mirror {
+        #[arg(long)]
+        serial: Option<String>,
+
+        #[arg(long, default_value = DEFAULT_HOST)]
+        host: String,
+
+        #[arg(long, default_value_t = VIDEO_PORT)]
+        port: u16,
+
+        /// If set, do not run adb forward automatically.
+        #[arg(long, default_value_t = false)]
+        no_adb: bool,
+    },
 }
 
 fn main() -> Result<()> {
@@ -167,6 +183,24 @@ fn main() -> Result<()> {
                 duration: seconds.map(Duration::from_secs),
                 frame_limit: frames,
             })?;
+        }
+        Command::Mirror {
+            serial,
+            host,
+            port,
+            no_adb,
+        } => {
+            let serial = resolve_serial(serial)?;
+            if !no_adb {
+                adb::forward(&serial, CONTROL_PORT, CONTROL_PORT).ok();
+                adb::forward(&serial, VIDEO_PORT, VIDEO_PORT).ok();
+            }
+
+            if let Ok(mut c) = control::ControlClient::connect(DEFAULT_HOST, CONTROL_PORT) {
+                let _ = c.hello("MirrorCoreHost", 0x0102_0304_0506_0708);
+            }
+
+            video::mirror_h264_to_stdout(video::VideoMirrorConfig { host, port })?;
         }
     }
     Ok(())
