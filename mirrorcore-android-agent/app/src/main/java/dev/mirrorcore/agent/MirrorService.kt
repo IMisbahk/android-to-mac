@@ -10,6 +10,8 @@ import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.util.concurrent.atomic.AtomicBoolean
@@ -20,6 +22,7 @@ class MirrorService : Service() {
     private val running = AtomicBoolean(false)
 
     private var projection: MediaProjection? = null
+    private var projectionCallback: MediaProjection.Callback? = null
     private var controller: MirrorController? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -58,6 +61,21 @@ class MirrorService : Service() {
 
         val mgr = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         projection = mgr.getMediaProjection(resultCode, data)
+        if (projection == null) {
+            Log.e(TAG, "Failed to acquire MediaProjection")
+            stopSelf()
+            return
+        }
+
+        // Android 14+ requires registering a callback before creating VirtualDisplay/capture.
+        val callback = object : MediaProjection.Callback() {
+            override fun onStop() {
+                Log.w(TAG, "MediaProjection stopped by system/user")
+                handleStop()
+            }
+        }
+        projectionCallback = callback
+        projection!!.registerCallback(callback, Handler(Looper.getMainLooper()))
 
         val controller = MirrorController(
             applicationContext = applicationContext,
@@ -72,6 +90,13 @@ class MirrorService : Service() {
         running.set(false)
         controller?.stop()
         controller = null
+        projectionCallback?.let {
+            try {
+                projection?.unregisterCallback(it)
+            } catch (_: Throwable) {
+            }
+        }
+        projectionCallback = null
         projection?.stop()
         projection = null
         stopForeground(STOP_FOREGROUND_REMOVE)
