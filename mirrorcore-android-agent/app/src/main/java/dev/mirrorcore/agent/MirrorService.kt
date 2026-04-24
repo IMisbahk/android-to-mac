@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import java.util.concurrent.atomic.AtomicBoolean
 
 class MirrorService : Service() {
@@ -75,7 +76,11 @@ class MirrorService : Service() {
             }
         }
         projectionCallback = callback
-        projection!!.registerCallback(callback, Handler(Looper.getMainLooper()))
+        if (Build.VERSION.SDK_INT >= 34) {
+            projection!!.registerCallback(ContextCompat.getMainExecutor(this), callback)
+        } else {
+            projection!!.registerCallback(callback, Handler(Looper.getMainLooper()))
+        }
 
         val controller = MirrorController(
             applicationContext = applicationContext,
