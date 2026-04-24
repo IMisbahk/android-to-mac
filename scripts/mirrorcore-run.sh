@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 CONTROL_PORT="27183"
 VIDEO_PORT="27184"
+AUDIO_PORT="27185"
 
 ANDROID_HOME_DEFAULT="${HOME}/Library/Android/sdk"
 ANDROID_HOME="${ANDROID_HOME:-$ANDROID_HOME_DEFAULT}"
@@ -71,6 +72,7 @@ echo "On your phone: accept the screen-capture prompt when it appears."
 echo "[4/5] Setting up port forwards..."
 adb -s "$SERIAL" forward "tcp:${CONTROL_PORT}" "tcp:${CONTROL_PORT}" || true
 adb -s "$SERIAL" forward "tcp:${VIDEO_PORT}" "tcp:${VIDEO_PORT}" || true
+adb -s "$SERIAL" forward "tcp:${AUDIO_PORT}" "tcp:${AUDIO_PORT}" || true
 
 echo "[4.5/5] Waiting for agent ports to come up..."
 DEADLINE=$((SECONDS + 45))
@@ -78,9 +80,11 @@ READY="0"
 while [ "$SECONDS" -lt "$DEADLINE" ]; do
   if adb -s "$SERIAL" shell ss -ltn 2>/dev/null | rg -q ":${CONTROL_PORT}"; then
     if adb -s "$SERIAL" shell ss -ltn 2>/dev/null | rg -q ":${VIDEO_PORT}"; then
-      echo "Agent ports are listening."
-      READY="1"
-      break
+      if adb -s "$SERIAL" shell ss -ltn 2>/dev/null | rg -q ":${AUDIO_PORT}"; then
+        echo "Agent ports are listening."
+        READY="1"
+        break
+      fi
     fi
   fi
   echo "Waiting... (accept the prompt on the phone)"
