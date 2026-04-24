@@ -45,3 +45,11 @@ Play (requires ffmpeg tools):
 ```sh
 ffplay -fflags nobuffer -flags low_delay -framedrop capture.h264
 ```
+
+## One-shot mirror (recommended)
+
+Use the repo script:
+
+```sh
+/Users/misbahkhursheed/Developer/android-to-mac/scripts/mirrorcore-run.sh [SERIAL]
+```
