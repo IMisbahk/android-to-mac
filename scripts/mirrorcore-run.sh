@@ -64,6 +64,19 @@ echo "[4/5] Setting up port forwards..."
 adb -s "$SERIAL" forward "tcp:${CONTROL_PORT}" "tcp:${CONTROL_PORT}" || true
 adb -s "$SERIAL" forward "tcp:${VIDEO_PORT}" "tcp:${VIDEO_PORT}" || true
 
+echo "[4.5/5] Waiting for agent ports to come up..."
+DEADLINE=$((SECONDS + 45))
+while [ "$SECONDS" -lt "$DEADLINE" ]; do
+  if adb -s "$SERIAL" shell ss -ltn 2>/dev/null | rg -q ":${CONTROL_PORT}"; then
+    if adb -s "$SERIAL" shell ss -ltn 2>/dev/null | rg -q ":${VIDEO_PORT}"; then
+      echo "Agent ports are listening."
+      break
+    fi
+  fi
+  echo "Waiting... (accept the prompt on the phone)"
+  sleep 1
+done
+
 echo "[5/5] Starting mirror window (ffplay)..."
 echo "Close ffplay to stop."
 
