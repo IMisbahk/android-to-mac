@@ -106,6 +106,45 @@ enum Command {
         #[arg(long, default_value_t = false)]
         no_adb: bool,
     },
+
+    /// Send a tap input event (normalized coords 0..1).
+    Tap {
+        #[arg(long)]
+        serial: Option<String>,
+
+        #[arg(long, default_value = DEFAULT_HOST)]
+        host: String,
+
+        #[arg(long, default_value_t = CONTROL_PORT)]
+        port: u16,
+
+        #[arg(long)]
+        x: f32,
+
+        #[arg(long)]
+        y: f32,
+    },
+
+    /// Send a swipe input event (normalized coords 0..1).
+    Swipe {
+        #[arg(long)]
+        serial: Option<String>,
+
+        #[arg(long, default_value = DEFAULT_HOST)]
+        host: String,
+
+        #[arg(long, default_value_t = CONTROL_PORT)]
+        port: u16,
+
+        #[arg(long)]
+        x0: f32,
+        #[arg(long)]
+        y0: f32,
+        #[arg(long)]
+        x1: f32,
+        #[arg(long)]
+        y1: f32,
+    },
 }
 
 fn main() -> Result<()> {
@@ -201,6 +240,28 @@ fn main() -> Result<()> {
             }
 
             video::mirror_h264_to_stdout(video::VideoMirrorConfig { host, port })?;
+        }
+        Command::Tap { serial, host, port, x, y } => {
+            let serial = resolve_serial(serial)?;
+            adb::forward(&serial, CONTROL_PORT, CONTROL_PORT).ok();
+            let mut c = control::ControlClient::connect(&host, port)?;
+            c.tap(x, y)?;
+            println!("sent tap x={x} y={y}");
+        }
+        Command::Swipe {
+            serial,
+            host,
+            port,
+            x0,
+            y0,
+            x1,
+            y1,
+        } => {
+            let serial = resolve_serial(serial)?;
+            adb::forward(&serial, CONTROL_PORT, CONTROL_PORT).ok();
+            let mut c = control::ControlClient::connect(&host, port)?;
+            c.swipe(x0, y0, x1, y1)?;
+            println!("sent swipe x0={x0} y0={y0} x1={x1} y1={y1}");
         }
     }
     Ok(())
