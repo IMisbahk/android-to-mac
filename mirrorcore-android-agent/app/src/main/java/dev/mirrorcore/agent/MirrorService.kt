@@ -37,8 +37,18 @@ class MirrorService : Service() {
         startForeground(NOTIFICATION_ID, buildNotification())
 
         val resultCode = intent.getIntExtra(EXTRA_RESULT_CODE, 0)
-        val data = intent.getParcelableExtra<Intent>(EXTRA_RESULT_DATA)
-        val config = intent.getParcelableExtra<MirrorConfig>(EXTRA_CONFIG) ?: MirrorConfig(1.0f, 60, 0)
+        val data = if (Build.VERSION.SDK_INT >= 33) {
+            intent.getParcelableExtra(EXTRA_RESULT_DATA, Intent::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(EXTRA_RESULT_DATA)
+        }
+        val config = if (Build.VERSION.SDK_INT >= 33) {
+            intent.getParcelableExtra(EXTRA_CONFIG, MirrorConfig::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(EXTRA_CONFIG)
+        } ?: MirrorConfig(1.0f, 60, 0)
 
         if (resultCode == 0 || data == null) {
             Log.e(TAG, "Missing MediaProjection result")
@@ -102,4 +112,3 @@ class MirrorService : Service() {
         private const val NOTIFICATION_ID = 1
     }
 }
-
