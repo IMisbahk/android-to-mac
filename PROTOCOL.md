@@ -13,6 +13,7 @@ MirrorCore uses **two TCP ports**:
 
 - **Control channel** (bi-directional): `HELLO`, `PING/PONG`, `INPUT_EVENT`, `CLIPBOARD_SYNC`, `FILE_*`
 - **Video channel** (Android → macOS): `VIDEO_CONFIG`, `VIDEO_FRAME`
+- **Audio channel** (Android → macOS): `AUDIO_CONFIG`, `AUDIO_FRAME`
 
 Initially, both ports are expected to run over **ADB port forwarding** (USB). The protocol is also compatible with direct TCP for WiFi mode.
 
@@ -151,8 +152,26 @@ Payload:
 - `pts_us:u64`
 - `data:bytes` (u32 len + bytes), AnnexB access unit (start codes allowed)
 
+### Audio channel messages
+
+#### `0x12 AUDIO_CONFIG`
+
+Payload:
+
+- `codec:u8` (1=PCM_S16LE)
+- `sample_rate:u32` (e.g. 48000)
+- `channels:u8` (1 or 2)
+- `frame_samples:u16` (samples per channel per frame; e.g. 960 for 20ms @48k)
+- `reserved:u16` (0)
+
+#### `0x13 AUDIO_FRAME`
+
+Payload:
+
+- `pts_us:u64`
+- `data:bytes` (u32 len + bytes), interleaved PCM_S16LE
+
 ## Forward compatibility rules
 
 - Unknown `msg_type` is not fatal: decoders should surface a generic frame with raw payload.
 - Future versions may set `header_len > 32`. Phase 1 implementations **must reject** `header_len < 32` and reject `header_len > 256`.
-
