@@ -107,6 +107,7 @@ pub fn mirror_h264_to_stdout(cfg: VideoMirrorConfig) -> Result<()> {
                 backoff = Duration::from_millis(200);
                 if let Err(err) = mirror_from_stream(stream, &mut out) {
                     eprintln!("video stream ended ({err}); reconnecting...");
+                    std::thread::sleep(Duration::from_millis(200));
                 }
             }
             Err(err) => {
