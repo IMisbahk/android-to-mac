@@ -41,7 +41,6 @@ if ! command -v "$JAVA_EXEC" >/dev/null 2>&1; then
   exit 1
 fi
 
-exec "$JAVA_EXEC" $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS \
+exec "$JAVA_EXEC" $DEFAULT_JVM_OPTS ${JAVA_OPTS:-} ${GRADLE_OPTS:-} \
   -classpath "$CLASSPATH" \
   org.gradle.wrapper.GradleWrapperMain "$@"
-
