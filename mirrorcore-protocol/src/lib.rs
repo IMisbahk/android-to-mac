@@ -1,14 +1,13 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod codec;
+pub mod constants;
+pub mod enums;
+pub mod error;
+pub mod frame;
+pub mod header;
+pub mod payload;
+pub mod types;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use codec::StreamCodec;
+pub use error::{ProtocolError, Result};
+pub use frame::Frame;
+pub use header::Header;
