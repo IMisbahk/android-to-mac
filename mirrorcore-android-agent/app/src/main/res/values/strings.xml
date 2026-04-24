@@ -1,4 +1,4 @@
 <resources>
     <string name="app_name">MirrorCore Agent</string>
+    <string name="accessibility_desc">MirrorCore input injector (touch gestures)</string>
 </resources>
-
