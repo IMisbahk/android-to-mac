@@ -37,6 +37,13 @@ class SurfaceH264Backend : CaptureBackend {
             setInteger(MediaFormat.KEY_BIT_RATE, bitrate)
             setInteger(MediaFormat.KEY_FRAME_RATE, config.fps)
             setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
+            // Low-latency hints / common tuning knobs (best-effort; vendor may ignore).
+            setInteger(
+                MediaFormat.KEY_BITRATE_MODE,
+                MediaCodecInfo.EncoderCapabilities.BITRATE_MODE_CBR,
+            )
+            setInteger(MediaFormat.KEY_MAX_B_FRAMES, 0)
+            setInteger(MediaFormat.KEY_PRIORITY, 0)
         }
 
         val codec = MediaCodec.createEncoderByType(MIME)
