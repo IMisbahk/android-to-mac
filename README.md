@@ -13,5 +13,4 @@ This repository begins with a language-agnostic binary framing protocol plus a R
 
 ## Status
 
-Phase 1 in progress: protocol + reference implementation + tests.
-
+Phase 1 complete: protocol + Rust reference implementation + tests + CLI.

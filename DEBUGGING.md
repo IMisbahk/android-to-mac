@@ -17,3 +17,8 @@ cargo run -p mirrorcore-protocol-cli -- encode hello --role android --device-nam
   cargo run -p mirrorcore-protocol-cli -- decode
 ```
 
+Decode with payload preview:
+
+```sh
+cargo run -p mirrorcore-protocol-cli -- decode --payload-hex-bytes 32 < frames.bin
+```

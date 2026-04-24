@@ -14,3 +14,8 @@ From repository root:
 cargo test
 ```
 
+Build the CLI:
+
+```sh
+cargo build -p mirrorcore-protocol-cli
+```
