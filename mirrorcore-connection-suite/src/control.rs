@@ -1,4 +1,4 @@
-use std::io::{BufReader, BufWriter};
+use std::io::{BufReader, BufWriter, Write};
 use std::net::TcpStream;
 use std::time::Duration;
 
@@ -98,4 +98,3 @@ fn now_us() -> u64 {
         .unwrap_or_default()
         .as_micros() as u64
 }
-

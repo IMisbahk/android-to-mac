@@ -74,7 +74,6 @@ pub fn capture_h264(cfg: VideoCaptureConfig) -> Result<()> {
                 bytes += vf.data.len() as u64;
 
                 if last_log.elapsed() >= Duration::from_secs(1) {
-                    let secs = last_log.elapsed().as_secs_f64();
                     let fps = (frames as f64) / start.elapsed().as_secs_f64().max(0.001);
                     let kbps = ((bytes as f64) * 8.0 / start.elapsed().as_secs_f64().max(0.001)) / 1000.0;
                     eprintln!("capture: frames={frames} avg_fps={fps:.1} avg_kbps={kbps:.0} last_pts_us={}", vf.pts_us);
@@ -91,4 +90,3 @@ pub fn capture_h264(cfg: VideoCaptureConfig) -> Result<()> {
     eprintln!("wrote {} bytes to {}", bytes, cfg.out_path);
     Ok(())
 }
-
