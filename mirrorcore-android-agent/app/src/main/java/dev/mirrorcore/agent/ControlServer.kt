@@ -2,6 +2,9 @@ package dev.mirrorcore.agent
 
 import android.os.Build
 import android.util.Log
+import dev.mirrorcore.agent.input.InputEventCodec
+import dev.mirrorcore.agent.input.InputEvent
+import dev.mirrorcore.agent.input.InputInjection
 import dev.mirrorcore.agent.mcb1.Mcb1Codec
 import dev.mirrorcore.agent.mcb1.Mcb1Header
 import dev.mirrorcore.agent.mcb1.Mcb1MsgType
@@ -87,6 +90,12 @@ class ControlServer {
                         )
                         codec.writeFrame(output, header, payload = payload)
                     }
+                    Mcb1MsgType.INPUT_EVENT -> {
+                        val ev = InputEventCodec.decode(frame.payload)
+                        if (ev is InputEvent.Touch) {
+                            InputInjection.injectTouchNormalized(ev)
+                        }
+                    }
                     else -> {
                         // Unknown control messages are ignored in Phase 2.
                     }
@@ -107,4 +116,3 @@ class ControlServer {
         private const val TAG = "MirrorCoreControl"
     }
 }
-
