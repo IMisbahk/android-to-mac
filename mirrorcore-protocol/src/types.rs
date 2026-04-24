@@ -291,6 +291,83 @@ impl VideoFrame {
 
 #[repr(u8)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AudioCodec {
+    PcmS16le = 1,
+}
+
+impl AudioCodec {
+    pub fn from_u8(v: u8) -> Option<Self> {
+        Some(match v {
+            1 => Self::PcmS16le,
+            _ => return None,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AudioConfig {
+    pub codec: AudioCodec,
+    pub sample_rate: u32,
+    pub channels: u8,
+    pub frame_samples: u16,
+    pub reserved: u16,
+}
+
+impl AudioConfig {
+    pub fn to_payload(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        write_u8(&mut out, self.codec as u8);
+        write_u32_le(&mut out, self.sample_rate);
+        write_u8(&mut out, self.channels);
+        write_u16_le(&mut out, self.frame_samples);
+        write_u16_le(&mut out, self.reserved);
+        out
+    }
+
+    pub fn from_payload(mut buf: &[u8]) -> Result<Self> {
+        let codec = read_u8(&mut buf)?;
+        let codec = AudioCodec::from_u8(codec).ok_or_else(|| {
+            ProtocolError::Io(std::io::Error::new(std::io::ErrorKind::InvalidData, "audio.codec"))
+        })?;
+        let sample_rate = read_u32_le(&mut buf)?;
+        let channels = read_u8(&mut buf)?;
+        let frame_samples = read_u16_le(&mut buf)?;
+        let reserved = read_u16_le(&mut buf)?;
+        ensure_empty(buf)?;
+        Ok(Self {
+            codec,
+            sample_rate,
+            channels,
+            frame_samples,
+            reserved,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AudioFrame {
+    pub pts_us: u64,
+    pub data: Vec<u8>,
+}
+
+impl AudioFrame {
+    pub fn to_payload(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        write_u64_le(&mut out, self.pts_us);
+        write_bytes_u32(&mut out, &self.data);
+        out
+    }
+
+    pub fn from_payload(mut buf: &[u8]) -> Result<Self> {
+        let pts_us = read_u64_le(&mut buf)?;
+        let data = read_bytes_u32(&mut buf)?;
+        ensure_empty(buf)?;
+        Ok(Self { pts_us, data })
+    }
+}
+
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InputKind {
     Touch = 1,
     Key = 2,
@@ -439,4 +516,3 @@ fn ensure_empty(buf: &[u8]) -> Result<()> {
         )))
     }
 }
-

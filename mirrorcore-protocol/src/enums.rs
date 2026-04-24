@@ -7,6 +7,8 @@ pub enum MsgType {
 
     VideoConfig = 0x10,
     VideoFrame = 0x11,
+    AudioConfig = 0x12,
+    AudioFrame = 0x13,
 
     InputEvent = 0x20,
     ClipboardSync = 0x30,
@@ -25,6 +27,8 @@ impl MsgType {
             0x03 => Self::Pong,
             0x10 => Self::VideoConfig,
             0x11 => Self::VideoFrame,
+            0x12 => Self::AudioConfig,
+            0x13 => Self::AudioFrame,
             0x20 => Self::InputEvent,
             0x30 => Self::ClipboardSync,
             0x40 => Self::FileOffer,
@@ -66,4 +70,3 @@ pub mod caps {
     pub const CLIPBOARD: u32 = 0x0000_0004;
     pub const FILE: u32 = 0x0000_0008;
 }
-
