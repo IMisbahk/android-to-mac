@@ -27,6 +27,14 @@ object InputInjection {
         svc.injectTouchNormalized(event)
     }
 
+    fun injectKey(event: InputEvent.Key) {
+        val svc = service ?: run {
+            Log.w(TAG, "Accessibility service not bound, cannot inject key")
+            return
+        }
+        svc.injectKey(event)
+    }
+
     private const val TAG = "MirrorCoreInput"
 }
 
@@ -90,6 +98,49 @@ class MirrorAccessibilityService : AccessibilityService() {
             TouchAction.Cancel -> {
                 downAtMs = 0
             }
+        }
+    }
+
+    fun injectKey(ev: InputEvent.Key) {
+        if (ev.action != KeyAction.Down) return // Only act on key-down
+
+        // Map special Android keycodes to global actions
+        when (ev.androidKeycode.toInt()) {
+            4 -> { // AKEYCODE_BACK
+                performGlobalAction(GLOBAL_ACTION_BACK)
+            }
+            3 -> { // AKEYCODE_HOME
+                performGlobalAction(GLOBAL_ACTION_HOME)
+            }
+            187 -> { // AKEYCODE_APP_SWITCH
+                performGlobalAction(GLOBAL_ACTION_RECENTS)
+            }
+            26 -> { // AKEYCODE_POWER
+                if (android.os.Build.VERSION.SDK_INT >= 28) {
+                    performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+                }
+            }
+            25 -> { // AKEYCODE_VOLUME_DOWN — use adb shell workaround
+                execShellCommand("input keyevent 25")
+            }
+            24 -> { // AKEYCODE_VOLUME_UP
+                execShellCommand("input keyevent 24")
+            }
+            82 -> { // AKEYCODE_MENU
+                performGlobalAction(GLOBAL_ACTION_NOTIFICATIONS)
+            }
+            else -> {
+                // For regular keys, use shell input keyevent
+                execShellCommand("input keyevent ${ev.androidKeycode}")
+            }
+        }
+    }
+
+    private fun execShellCommand(cmd: String) {
+        try {
+            Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
+        } catch (t: Throwable) {
+            Log.w("MirrorCoreInput", "Shell command failed: ${t.message}")
         }
     }
 }
