@@ -17,6 +17,9 @@ pub enum MsgType {
     FileChunk = 0x41,
     FileEnd = 0x42,
     FileCancel = 0x43,
+
+    ShellExec = 0x50,
+    ShellOutput = 0x51,
 }
 
 impl MsgType {
@@ -35,6 +38,8 @@ impl MsgType {
             0x41 => Self::FileChunk,
             0x42 => Self::FileEnd,
             0x43 => Self::FileCancel,
+            0x50 => Self::ShellExec,
+            0x51 => Self::ShellOutput,
             _ => return None,
         })
     }
