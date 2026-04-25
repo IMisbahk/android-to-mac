@@ -171,6 +171,26 @@ Payload:
 - `pts_us:u64`
 - `data:bytes` (u32 len + bytes), interleaved PCM_S16LE
 
+### Shell messages
+
+#### `0x50 SHELL_EXEC`
+
+Sent from Mac → Android. Requests command execution on the device.
+
+Payload:
+
+- `command:str` (u16 len + UTF-8)
+
+#### `0x51 SHELL_OUTPUT`
+
+Sent from Android → Mac. Contains the result of a SHELL_EXEC command.
+
+Payload:
+
+- `exit_code:i32`
+- `stdout:bytes` (u32 len + bytes)
+- `stderr:bytes` (u32 len + bytes)
+
 ## Forward compatibility rules
 
 - Unknown `msg_type` is not fatal: decoders should surface a generic frame with raw payload.
