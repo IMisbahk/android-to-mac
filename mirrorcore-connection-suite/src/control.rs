@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use anyhow::{Context, Result};
 use mirrorcore_protocol::enums::{caps, MsgType, Role};
-use mirrorcore_protocol::types::{Hello, InputEvent, Ping, TouchAction, TouchEvent};
+use mirrorcore_protocol::types::{Hello, InputEvent, KeyAction, KeyEvent, Ping, TouchAction, TouchEvent};
 use mirrorcore_protocol::Header;
 
 use crate::mcb1::Mcb1Stream;
@@ -90,6 +90,24 @@ impl ControlClient {
 
     pub fn swipe(&mut self, x0: f32, y0: f32, x1: f32, y1: f32) -> Result<()> {
         self.send_touch_sequence(x0, y0, x1, y1)
+    }
+
+    pub fn send_key(&mut self, keycode: u32, meta_state: u32) -> Result<()> {
+        let mut writer = BufWriter::new(self.stream.try_clone()?);
+        let down = InputEvent::Key(KeyEvent {
+            action: KeyAction::Down,
+            android_keycode: keycode,
+            meta_state,
+        });
+        self.send_input(&mut writer, down)?;
+        let up = InputEvent::Key(KeyEvent {
+            action: KeyAction::Up,
+            android_keycode: keycode,
+            meta_state,
+        });
+        self.send_input(&mut writer, up)?;
+        writer.flush()?;
+        Ok(())
     }
 
     fn send_touch_sequence(&mut self, x0: f32, y0: f32, x1: f32, y1: f32) -> Result<()> {
