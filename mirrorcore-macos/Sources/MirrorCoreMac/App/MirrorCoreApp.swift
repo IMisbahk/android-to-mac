@@ -11,6 +11,7 @@ class MirrorCoreApp: NSObject, NSApplicationDelegate {
     private let clipboardSync = ClipboardSync()
     private let fileTransfer = FileTransferManager()
     private let inputMapper = InputMapper()
+    private let shellPanel = ShellPanel()
 
     private var fpsTimer: Timer?
 
@@ -117,6 +118,12 @@ class MirrorCoreApp: NSObject, NSApplicationDelegate {
             self?.connectionManager.sendFileEnd(payload)
         }
 
+        // Shell panel
+        shellPanel.onCommand = { [weak self] command in
+            let payload = ShellExecPayload(command: command)
+            self?.connectionManager.sendShellExec(payload)
+        }
+
         // FPS timer
         fpsTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             guard let self else { return }
@@ -149,6 +156,8 @@ class MirrorCoreApp: NSObject, NSApplicationDelegate {
         deviceMenu.addItem(withTitle: "Back", action: #selector(sendBack), keyEquivalent: "\u{1b}") // Escape
         deviceMenu.addItem(withTitle: "Home", action: #selector(sendHome), keyEquivalent: "")
         deviceMenu.addItem(withTitle: "Recents", action: #selector(sendRecents), keyEquivalent: "")
+        deviceMenu.addItem(.separator())
+        deviceMenu.addItem(withTitle: "Shell Panel", action: #selector(toggleShell), keyEquivalent: "t")
         let deviceMenuItem = NSMenuItem()
         deviceMenuItem.submenu = deviceMenu
         mainMenu.addItem(deviceMenuItem)
@@ -182,5 +191,13 @@ class MirrorCoreApp: NSObject, NSApplicationDelegate {
 
     @objc private func sendRecents() {
         connectionManager.sendKeyEvent(KeyEventPayload(action: .down, androidKeycode: KeycodeMap.AKEYCODE_APP_SWITCH, metaState: 0))
+    }
+
+    @objc private func toggleShell() {
+        if shellPanel.isVisible {
+            shellPanel.orderOut(nil)
+        } else {
+            shellPanel.makeKeyAndOrderFront(nil)
+        }
     }
 }
