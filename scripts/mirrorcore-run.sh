@@ -97,17 +97,27 @@ if [ "$READY" != "1" ]; then
   exit 1
 fi
 
-echo "[5/5] Starting mirror window (ffplay)..."
-echo "Close ffplay to stop."
+echo "[5/5] Starting mirror..."
 
 trap 'pkill -P $$ || true' EXIT
 
+# Start audio in background
 (
   cd "$ROOT_DIR"
   cargo run -q -p mirrorcore-connection-suite -- audio --serial "$SERIAL" >/dev/null
 ) &
 
-exec bash -lc \
-  "cd \"$ROOT_DIR\" && \
-   cargo run -q -p mirrorcore-connection-suite -- mirror --serial \"$SERIAL\" | \
-   ffplay -loglevel warning -f h264 -fflags nobuffer -flags low_delay -framedrop -probesize 32 -analyzeduration 0 -i -"
+# Try native macOS app first, fall back to ffplay
+NATIVE_APP="$ROOT_DIR/mirrorcore-macos/.build/release/MirrorCoreMac"
+if [ -f "$NATIVE_APP" ]; then
+  echo "Launching native MirrorCore macOS app..."
+  exec "$NATIVE_APP"
+else
+  echo "Native app not found at $NATIVE_APP. Using ffplay."
+  echo "To build the native app: cd mirrorcore-macos && swift build -c release"
+  echo "Close ffplay to stop."
+  exec bash -lc \
+    "cd \"$ROOT_DIR\" && \
+     cargo run -q -p mirrorcore-connection-suite -- mirror --serial \"$SERIAL\" | \
+     ffplay -loglevel warning -f h264 -fflags nobuffer -flags low_delay -framedrop -probesize 32 -analyzeduration 0 -i -"
+fi
