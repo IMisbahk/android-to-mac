@@ -163,6 +163,58 @@ enum Command {
         #[arg(long)]
         y1: f32,
     },
+
+    /// Send a key event (Android keycode).
+    Key {
+        #[arg(long)]
+        serial: Option<String>,
+
+        #[arg(long, default_value = DEFAULT_HOST)]
+        host: String,
+
+        #[arg(long, default_value_t = CONTROL_PORT)]
+        port: u16,
+
+        /// Android keycode to send.
+        #[arg(long)]
+        keycode: u32,
+    },
+
+    /// Send BACK key event.
+    Back {
+        #[arg(long)]
+        serial: Option<String>,
+
+        #[arg(long, default_value = DEFAULT_HOST)]
+        host: String,
+
+        #[arg(long, default_value_t = CONTROL_PORT)]
+        port: u16,
+    },
+
+    /// Send HOME key event.
+    Home {
+        #[arg(long)]
+        serial: Option<String>,
+
+        #[arg(long, default_value = DEFAULT_HOST)]
+        host: String,
+
+        #[arg(long, default_value_t = CONTROL_PORT)]
+        port: u16,
+    },
+
+    /// Send RECENTS key event.
+    Recents {
+        #[arg(long)]
+        serial: Option<String>,
+
+        #[arg(long, default_value = DEFAULT_HOST)]
+        host: String,
+
+        #[arg(long, default_value_t = CONTROL_PORT)]
+        port: u16,
+    },
 }
 
 fn main() -> Result<()> {
@@ -292,6 +344,39 @@ fn main() -> Result<()> {
             let mut c = control::ControlClient::connect(&host, port)?;
             c.swipe(x0, y0, x1, y1)?;
             println!("sent swipe x0={x0} y0={y0} x1={x1} y1={y1}");
+        }
+        Command::Key {
+            serial,
+            host,
+            port,
+            keycode,
+        } => {
+            let serial = resolve_serial(serial)?;
+            adb::forward(&serial, CONTROL_PORT, CONTROL_PORT).ok();
+            let mut c = control::ControlClient::connect(&host, port)?;
+            c.send_key(keycode, 0)?;
+            println!("sent key {keycode}");
+        }
+        Command::Back { serial, host, port } => {
+            let serial = resolve_serial(serial)?;
+            adb::forward(&serial, CONTROL_PORT, CONTROL_PORT).ok();
+            let mut c = control::ControlClient::connect(&host, port)?;
+            c.send_key(4, 0)?; // AKEYCODE_BACK
+            println!("sent BACK");
+        }
+        Command::Home { serial, host, port } => {
+            let serial = resolve_serial(serial)?;
+            adb::forward(&serial, CONTROL_PORT, CONTROL_PORT).ok();
+            let mut c = control::ControlClient::connect(&host, port)?;
+            c.send_key(3, 0)?; // AKEYCODE_HOME
+            println!("sent HOME");
+        }
+        Command::Recents { serial, host, port } => {
+            let serial = resolve_serial(serial)?;
+            adb::forward(&serial, CONTROL_PORT, CONTROL_PORT).ok();
+            let mut c = control::ControlClient::connect(&host, port)?;
+            c.send_key(187, 0)?; // AKEYCODE_APP_SWITCH
+            println!("sent RECENTS");
         }
     }
     Ok(())
