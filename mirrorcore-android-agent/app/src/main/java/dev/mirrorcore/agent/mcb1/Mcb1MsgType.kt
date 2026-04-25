@@ -17,4 +17,7 @@ object Mcb1MsgType {
     const val FILE_CHUNK: Int = 0x41
     const val FILE_END: Int = 0x42
     const val FILE_CANCEL: Int = 0x43
+
+    const val SHELL_EXEC: Int = 0x50
+    const val SHELL_OUTPUT: Int = 0x51
 }
