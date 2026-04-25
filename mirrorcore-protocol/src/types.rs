@@ -506,6 +506,54 @@ impl InputEvent {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ShellExec {
+    pub command: String,
+}
+
+impl ShellExec {
+    pub fn to_payload(&self) -> Result<Vec<u8>> {
+        let mut out = Vec::new();
+        write_str_u16(&mut out, &self.command)?;
+        Ok(out)
+    }
+
+    pub fn from_payload(mut buf: &[u8]) -> Result<Self> {
+        let command = read_str_u16(&mut buf)?;
+        ensure_empty(buf)?;
+        Ok(Self { command })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ShellOutput {
+    pub exit_code: i32,
+    pub stdout: Vec<u8>,
+    pub stderr: Vec<u8>,
+}
+
+impl ShellOutput {
+    pub fn to_payload(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        write_u32_le(&mut out, self.exit_code as u32);
+        write_bytes_u32(&mut out, &self.stdout);
+        write_bytes_u32(&mut out, &self.stderr);
+        out
+    }
+
+    pub fn from_payload(mut buf: &[u8]) -> Result<Self> {
+        let exit_code = read_u32_le(&mut buf)? as i32;
+        let stdout = read_bytes_u32(&mut buf)?;
+        let stderr = read_bytes_u32(&mut buf)?;
+        ensure_empty(buf)?;
+        Ok(Self {
+            exit_code,
+            stdout,
+            stderr,
+        })
+    }
+}
+
 fn ensure_empty(buf: &[u8]) -> Result<()> {
     if buf.is_empty() {
         Ok(())
